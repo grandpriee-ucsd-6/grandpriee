@@ -7,9 +7,9 @@
 #define MAX(x,y) x>y?x:y
 #define MIN(x,y) x>y?y:x
 #define MEDIAN(x,y,z) MIN((MAX(x,y)),z)
-#define Kp 1
-#define Ki 0
-#define Kd 0
+#define Kp 0.9
+#define Ki 0.5
+#define Kd 0.125
 #define SERVOMID 78
 
 
@@ -50,29 +50,40 @@ void loop() {
   int * medianArr = median_filter(cameraData);
   int * modifiedArr = gradient_filter(medianArr);
   int * edge = edges(modifiedArr);
+
+
+  
   int maxin = edge[0];
   int minin = edge[1];
   int mid = (maxin + minin)/2;
-  Serial.print("mid=");
-  Serial.println(mid);
   double out = pid(mid);
-  Serial.print("out=");
-  Serial.println(out);
-  int turnAngle = out + SERVOMID;
-  
+
+  int turnAngle = (0.3 * out) + SERVOMID;
+
+  Serial.print(mid);
+  Serial.print(' ');
+  Serial.print(out);
+  Serial.print(' ');
+  Serial.print(turnAngle);
+  Serial.println();
+
+  serv.write(turnAngle);
+  delay(4);
+
+  delete(edge);
+  delete(medianArr);
+  delete(modifiedArr);
+   
 //  Serial.print(maxin);
 //  Serial.print(", ");
 //  Serial.print(minin);
 //  Serial.print("array:");
   
-  serv.write(turnAngle);
-  Serial.print("angle=");
-  Serial.println(turnAngle);   
-  delay(4);
-   delete(edge);
-   delete(medianArr);
-   delete(modifiedArr);
-   free(cameraData);
-   cameraData = new int[LEN];
-   Serial.flush();
+  //serv.write(turnAngle);
+  // vdelay(4);
+//   delete(edge);
+//   delete(medianArr);
+//   delete(modifiedArr);
+//   free(cameraData);
+//   cameraData = new int[LEN];
 }
