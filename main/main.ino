@@ -26,9 +26,15 @@ int * median_filter(int * raw);
 int * gradient_filter(int * raw);
 double pid(int mid);
 int * edges(int * nums);
+int validate(int width, int * width_array, int loop_count, int sum); // new validate function
 
 unsigned long lastTime = millis();
 double prevError;
+int loop_count = 0;
+int width_array[512]; //record the width of line we've detected;
+int sum_width = 0;
+int last_angle;
+int flag_back_track = 0; // =1 if car is getting back to track
 
 void setup() {
   Serial.begin(9600);
@@ -55,35 +61,48 @@ void loop() {
   
   int maxin = edge[0];
   int minin = edge[1];
+  int turnAngle = SERVOMID;
+
+  /*updated*/
+  int width = maxin - minin;
+  int ret = validate(width, width_array, loop_count,sum_width);
+  if(!ret){
+    if(!flag_back_track){
+      flag_back_track = 1;
+      turnAngle = -last_angle; //out of track,try to reverse t
+    }
+    else{
+      turnAngle = last_angle; // not yet back to track, keep turnnig
+    }
+  }
+  else if(ret == 2){
+    turnAngle = SERVOMID; //detect wider line than usual, keep going straight;
+  }
+  else{
+  if(loop_count < 512){
+      width_array[loop_count] = width;
+      sum_width += width;
+  }
+  flag_back_track = 0;
   int mid = (maxin + minin)/2;
   double out = pid(mid);
 
-  int turnAngle = (0.3 * out) + SERVOMID;
-
+  turnAngle = (0.3 * out) + SERVOMID;
+  }
+  /*
   Serial.print(mid);
   Serial.print(' ');
   Serial.print(out);
   Serial.print(' ');
   Serial.print(turnAngle);
-  Serial.println();
-
+  Serial.println();*/
+  
+  /*end of update*/
   serv.write(turnAngle);
   delay(4);
 
   delete(edge);
   delete(medianArr);
   delete(modifiedArr);
-   
-//  Serial.print(maxin);
-//  Serial.print(", ");
-//  Serial.print(minin);
-//  Serial.print("array:");
-  
-  //serv.write(turnAngle);
-  // vdelay(4);
-//   delete(edge);
-//   delete(medianArr);
-//   delete(modifiedArr);
-//   free(cameraData);
-//   cameraData = new int[LEN];
+  loop_count ++;
 }
